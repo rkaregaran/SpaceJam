@@ -7,6 +7,9 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
 
 - Native app builds with warnings treated as errors and passes strict signature
   verification with its local development signature.
+- The release build is also signed with the existing Developer ID Application
+  identity, hardened runtime, and a secure timestamp. Its strict signature
+  verification passes. Notarization is still pending.
 - 19 event-format cases cover both directions, natural scrolling, gesture
   phases, malformed-data refusal, and source tagging. No input is posted by
   these tests.
@@ -20,7 +23,8 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
 - Duration **75 ms** and hidden menu bar preference survive quitting and reopening.
 - Native views render correctly for the settings and permission-helper images.
 - Development DMG checksum verifies. It mounts read-only, contains the correct
-  Applications symlink, and has an app whose executable matches the final build.
+  Applications symlink, and has an app whose executable matches the tested
+  development build.
   The ZIP extracts with the same executable and a valid signature.
 - Public packaging rejects the ad hoc development build before producing a
   public cask. Installer and cask Ruby syntax checks pass.
@@ -33,11 +37,12 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
 - Confirm the physical app-tile drag into Settings on a clean installation.
 - Test Open at login after signing in again, sleep/wake, display changes,
   permission revocation, fullscreen fallback, and rapid queued shortcuts.
-- Build with Developer ID, obtain accepted notarization for app and DMG,
+- Obtain accepted notarization for app and DMG,
   staple tickets, and pass Gatekeeper assessment on a downloaded copy.
 - Exercise the terminal installer and Homebrew cask against actual uploaded,
   signed release assets. GitHub-hosted CI has not run yet.
 
-Rebuilding this ad hoc development app invalidated its earlier Accessibility
-grant. The current build needs a refreshed entry. This is distinct from the
-signed distribution and is reflected in the app's permission status.
+Rebuilding the ad hoc development app invalidated its earlier Accessibility
+grant. The Developer ID build now needs its initial refreshed entry. Subsequent
+updates should retain the same signing identity and bundle identifier; this
+still needs validation on a clean Mac.
