@@ -4,7 +4,9 @@
 
 Choose how quickly your Mac slides between desktops. SpaceJam works with
 **Control–Left/Right**, mouse buttons mapped to those shortcuts, and supported
-clicks on running apps in the Dock.
+clicks on running apps in the Dock, plus supported **Command–Tab** switches.
+Command–Tab support is included from v0.3.0. Check the version on the
+[latest release](https://github.com/rkaregaran/SpaceJam/releases/latest) before installing.
 
 ![SpaceJam settings](docs/images/settings.png)
 
@@ -54,15 +56,21 @@ password to write there. It leaves an existing installation intact.
 - **Speed up Dock app clicks** uses the selected duration to reach an app's
   desktop before activating it. Turn this off to keep native Dock timing.
 
+- **Speed up Command–Tab** keeps the native app switcher and uses the same
+  duration when its selected app is on another ordinary desktop. Command–Shift–Tab
+  and arrow navigation work too. Turn this off independently for native timing.
+
 Physical trackpad swipes, numbered desktop shortcuts, Mission Control, and
-fullscreen desktop transitions retain their native behavior. This release
+fullscreen desktop transitions retain their native behavior. SpaceJam
 changes ordinary desktop switching through Control–Left/Right and supported
-Dock app clicks. Distant Dock destinations use adjacent moves, each with the
-selected duration; fullscreen, other-display, and ambiguous clicks stay native.
+Dock and Command–Tab activations. Distant destinations use adjacent moves, each with the
+selected duration; fullscreen and ambiguous targets stay native. Dock destinations
+on another display stay native. Quick Command–Tab taps that finish before the
+native selection is resolved also keep their original timing.
 
 ## How it works
 
-The **v0.2.0** app turns Control–Left/Right into a synthetic horizontal
+The app turns Control–Left/Right into a synthetic horizontal
 swipe with a configurable duration. macOS still performs the desktop transition;
 SpaceJam supplies the gesture's progress and ending velocity.
 
@@ -102,6 +110,14 @@ Dock for normal activation. Dragging and modified clicks remain native, as do
 clicks whose lookup is not ready. See [input-path validation](docs/INPUT_PATHS.md)
 for measured results and remaining manual checks.
 
+For Command–Tab, a background lookup reads Dock's native switcher selection
+while Command is held. It matches the selected app's display name uniquely to
+a running app and resolves its focused/main window. A supported final Command
+release is deferred until the target desktop commits, then replayed for native
+activation. Escape, other shortcuts, and clicks preserve native selection
+behavior. Unresolved quick taps pass through immediately. New input, pausing,
+feature disable, and lifecycle changes return any deferred Command release.
+
 ### Permissions, safeguards, and risks
 
 - **Accessibility is a broad trust grant.** It permits an app to observe input
@@ -111,7 +127,8 @@ for measured results and remaining manual checks.
   Desktop detection reads display/desktop IDs and on-screen window metadata
   (owner, layer, and bounds), without capturing screen images.
   Dock detection reads app URLs, window IDs, and minimized state through
-  Accessibility; it does not read window titles or content.
+  Accessibility; Command–Tab also reads the selected app name in Dock’s switcher.
+  It does not read window titles or content.
   The app has no input log, analytics, or runtime network requests. Settings are
   stored locally in `NSUserDefaults`. Grant access only to a copy you trust;
   see [Apple's explanation of Accessibility access](https://support.apple.com/guide/mac-help/mh43185/mac).

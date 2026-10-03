@@ -4,6 +4,7 @@
 @interface SJSwitchEngine : NSObject
 @property(nonatomic) NSInteger milliseconds;
 @property(nonatomic) BOOL dockClicks;
+@property(nonatomic) BOOL commandTabs;
 @property(nonatomic, readonly) BOOL running;
 @property(nonatomic, readonly) BOOL animating;
 @property(nonatomic, copy, readonly) NSString *message;

@@ -70,3 +70,38 @@ Dock-control event, rather than counting raw touches. Physical event format,
 direction, natural scrolling, release versus cancel, and consecutive swipes
 must be validated on this Mac with real fingers. Synthetic fixtures cannot
 establish hardware recognition or the feel of release/settling.
+
+## Command–Tab — v0.3.0
+
+The native switcher appears as Dock's AXProcessSwitcherList. Its single
+AXSelectedChildren entry is an AXButton whose title is the app's display name;
+it has no app URL or process ID. SpaceJam uses an exact, unique running-app
+match, then applies the same focused-window and ambiguity checks as Dock clicks.
+It reads app names, not window titles or content, and does not infer native MRU
+ordering. Lookup runs while Command is held and each navigation change discards
+the previous candidate. Only a ready, validated final Command release is held.
+The target window's display selects the gesture route. Native activation follows
+the desktop commit, including adjacent steps for distant destinations.
+
+On the same macOS 27.2 host, a live signed integration harness selected Muse's
+window 1306 on desktop 5 from desktop 4. With a 75 ms setting, the original
+lookup-on-release prototype took about 139 ms to change desktop ID. Preparing
+the selection while Command is held reduced that to about 111 ms. The native
+comparison took about 286 ms. Muse became frontmost and the engine stayed
+running. These are desktop-ID timings, not frame-level animation measurements.
+
+Very fast taps may complete before Dock exposes any switcher list. An initial
+prototype that deferred an unresolved release could lose activation; it was
+replaced with an untouched native release for that case. Routing tests verify
+that fallback. The synthetic quick-tap harness also failed to reliably activate
+its intended app with acceleration disabled, so it cannot establish physical
+quick-tap performance. Physical keyboard timing, multiple displays, unusual
+app names, and multiwindow cases still need broader hands-on validation.
+
+The final implementation also passed reverse Command–Shift–Tab (about 111 ms,
+Muse frontmost), Escape cancellation (no desktop move, switcher closed), and
+feature disable about 25 ms into an active move (animation closed, native
+activation reached Muse in about 330 ms, engine remained running). A subsequent
+ordinary desktop move returned successfully. Non-input routing tests additionally
+cover arrows, both Command keys, extra modifiers, mouse cancellation, stopped
+and disabled engines, own tagged events, and unchanged unresolved releases.

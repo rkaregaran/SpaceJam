@@ -87,3 +87,37 @@ Rebuilding the ad hoc development app invalidated its earlier Accessibility
 grant. The Developer ID build now needs its initial refreshed entry. Subsequent
 updates should retain the same signing identity and bundle identifier; this
 still needs validation on a clean Mac.
+
+## Command–Tab / 0.3.0 preparation (October 3, 2026)
+
+- Signed arm64 build passed with warnings as errors. All event serialization,
+  desktop route, settings, and Command–Tab routing tests passed without posting
+  input. New preference defaults on and persists independently.
+- Native settings/onboarding screenshots were regenerated and inspected.
+- Live signed engine checks covered forward/reverse Command–Tab, Escape, feature
+  disable during a move, and a subsequent desktop move. At 75 ms, prepared
+  Command–Tab targets committed in about 111 ms versus 286 ms natively. Muse
+  activated correctly. Details and limitations are recorded in INPUT_PATHS.md.
+- Command release is preserved unchanged if the native target is unresolved.
+  Deterministic routing checks include right-click and scroll cancellation.
+- Public v0.2.0 remains the published release while 0.3.0 is prepared. The
+  Homebrew cask on main must retain the published DMG URL/checksum until release
+  publication; a locally generated 0.3.0 cask is saved with the local artifacts.
+- The release workflow has a linted verification-only option. Cloud signing
+  verification is pending explicit approval to upload the Developer ID private
+  key and secure entry of Apple notarization credentials; no credentials were
+  transferred during this preparation.
+
+The app and DMG from the first 0.3.0 packaging pass were accepted by Apple,
+stapled, and accepted by Gatekeeper. A final input-safeguard build then passed
+all tests, but its notarization attempt could not access the profile after the
+Mac locked. Preliminary notarized artifacts are preserved locally; they are
+not published or offered as the final build. Finishing final packaging and
+installed-app verification requires manually unlocking the Mac.
+
+After unlocking, the final 0.3.0 app and DMG were both notarized, stapled,
+and accepted by Gatekeeper. The Developer ID certificate/private key were
+uploaded with explicit user authorization into encrypted Actions secrets;
+the encrypted temporary export was deleted. Signing identity/team metadata
+are configured. Cloud workflow verification still requires direct secure entry
+of the Apple ID and app-specific notarization password.

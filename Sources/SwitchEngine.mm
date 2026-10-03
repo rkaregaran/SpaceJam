@@ -103,6 +103,12 @@ static SpaceState loadState() {
 @property(nonatomic) CFTimeInterval clickStarted;
 @property(nonatomic) int64_t dockSpace;
 @property(nonatomic) BOOL dockLookupBusy;
+@property(nonatomic) BOOL commandTabOpen;
+@property(nonatomic) BOOL commandLookupBusy;
+@property(nonatomic) SJDockTarget *commandCandidate;
+@property(nonatomic) NSUInteger commandGeneration;
+@property(nonatomic) int64_t commandSpace;
+@property(nonatomic) CGPoint commandPoint;
 - (CGEventRef)handle:(CGEventType)type event:(CGEventRef)event proxy:(CGEventTapProxy)proxy;
 @end
 
@@ -116,11 +122,12 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     std::deque<int> _pending;
     dispatch_queue_t _dockLookup;
     CGEventRef _dockRelease;
+    CGEventRef _commandRelease;
     CGEventTapProxy _activeProxy;
 }
 - (instancetype)init {
     if ((self=[super init])) {
-        _milliseconds=100; _dockClicks=YES; _message=@"Ready";
+        _milliseconds=100; _dockClicks=YES; _commandTabs=YES; _message=@"Ready";
         _dockLookup=dispatch_queue_create("dev.rzkr.SpaceJam.dock-lookup",DISPATCH_QUEUE_SERIAL);
     }
     return self;
@@ -130,6 +137,13 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     if(!enabled) {
         self.clickGeneration++; self.dockCandidate=nil;
         if(_dockRelease) [self cancelAnimation];
+    }
+}
+- (void)setCommandTabs:(BOOL)enabled {
+    _commandTabs=enabled;
+    if(!enabled) {
+        self.commandTabOpen=NO; self.commandCandidate=nil; self.commandGeneration++;
+        if(_commandRelease) [self cancelAnimation];
     }
 }
 - (void)note:(NSString *)message { self.message=message; if(self.didChange) self.didChange(); }
@@ -144,7 +158,10 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         CFRelease(check);
     } catch(const std::exception& error) { [self note:[NSString stringWithUTF8String:error.what()]]; return NO; }
     _tap=CGEventTapCreate(kCGSessionEventTap,kCGHeadInsertEventTap,kCGEventTapOptionDefault,
-        CGEventMaskBit(kCGEventKeyDown)|CGEventMaskBit(kCGEventKeyUp)|CGEventMaskBit(30)|
+        CGEventMaskBit(kCGEventKeyDown)|CGEventMaskBit(kCGEventKeyUp)|CGEventMaskBit(kCGEventFlagsChanged)|CGEventMaskBit(30)|
+        CGEventMaskBit(kCGEventMouseMoved)|CGEventMaskBit(kCGEventScrollWheel)|
+        CGEventMaskBit(kCGEventRightMouseDown)|CGEventMaskBit(kCGEventRightMouseUp)|CGEventMaskBit(kCGEventRightMouseDragged)|
+        CGEventMaskBit(kCGEventOtherMouseDown)|CGEventMaskBit(kCGEventOtherMouseUp)|CGEventMaskBit(kCGEventOtherMouseDragged)|
         CGEventMaskBit(kCGEventLeftMouseDown)|CGEventMaskBit(kCGEventLeftMouseUp)|CGEventMaskBit(kCGEventLeftMouseDragged),
         tapCallback,(__bridge void *)self);
     if(!_tap) { [self note:@"macOS denied access. Check Accessibility, then try enabling again."]; return NO; }
@@ -152,7 +169,7 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     if(!_source) { CFRelease(_tap); _tap=nullptr; [self note:@"Could not start SpaceJam. Native shortcuts are active."]; return NO; }
     CFRunLoopAddSource(CFRunLoopGetMain(),_source,kCFRunLoopCommonModes);
     CGEventTapEnable(_tap,true); self.running=YES;
-    [self note:self.dockClicks?@"Ready for Control–Left/Right and Dock app clicks.":@"Ready for Control–Left/Right."]; return YES;
+    [self note:@"Ready for desktop switching."]; return YES;
 }
 - (void)releaseDockClick {
     if(!_dockRelease) return;
@@ -162,6 +179,62 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     if(_activeProxy) CGEventTapPostEvent(_activeProxy,_dockRelease);
     else CGEventPost(kCGSessionEventTap,_dockRelease);
     CFRelease(_dockRelease); _dockRelease=nullptr; self.dockSpace=0;
+}
+- (void)releaseCommand {
+    if(!_commandRelease) return;
+    self.commandGeneration++;
+    CGEventSetIntegerValueField(_commandRelease,kCGEventSourceUserData,gesture::sourceTag);
+    if(_activeProxy) CGEventTapPostEvent(_activeProxy,_commandRelease);
+    else CGEventPost(kCGSessionEventTap,_commandRelease);
+    CFRelease(_commandRelease); _commandRelease=nullptr; self.commandSpace=0;
+}
+- (void)prepareCommandTarget:(NSUInteger)generation {
+    if(!self.running || !self.commandTabOpen || generation!=self.commandGeneration) return;
+    if(!self.commandLookupBusy) {
+        self.commandLookupBusy=YES;
+        __weak SJSwitchEngine *weakSelf=self;
+        dispatch_async(_dockLookup,^{ @autoreleasepool {
+            SJDockTarget *candidate=SJCommandTabTarget();
+            dispatch_async(dispatch_get_main_queue(),^{
+                SJSwitchEngine *engine=weakSelf;
+                engine.commandLookupBusy=NO;
+                if(engine.running && engine.commandTabOpen && generation==engine.commandGeneration)
+                    engine.commandCandidate=candidate;
+            });
+        } });
+    }
+    __weak SJSwitchEngine *weakSelf=self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,20*NSEC_PER_MSEC),dispatch_get_main_queue(),^{
+        [weakSelf prepareCommandTarget:generation];
+    });
+}
+- (void)commandSelectionChanged {
+    self.commandCandidate=nil;
+    NSUInteger generation=++self.commandGeneration;
+    __weak SJSwitchEngine *weakSelf=self;
+    // Let Dock process native navigation before reading its new selection.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,20*NSEC_PER_MSEC),dispatch_get_main_queue(),^{
+        [weakSelf prepareCommandTarget:generation];
+    });
+}
+- (CGEventRef)handleCommandRelease:(CGEventRef)event {
+    SJDockTarget *candidate=self.commandCandidate;
+    self.commandCandidate=nil; self.commandTabOpen=NO; self.commandGeneration++;
+    // Fast taps can complete before Dock exposes a switcher. Leave the original
+    // release untouched in that case; replaying it later can lose activation.
+    if(!self.commandTabs || !candidate || self.animating || self.physicalGesture || !SJDockTargetStillValid(candidate)) return event;
+    try {
+        self.commandPoint=CGPointMake(CGRectGetMidX(candidate.windowBounds),CGRectGetMidY(candidate.windowBounds));
+        SpaceState state=loadStateAtPoint(self.commandPoint);
+        int direction=SJDockDirection(state.spaces,state.index,candidate.space);
+        if(!direction) return event;
+        _commandRelease=CGEventCreateCopy(event);
+        if(!_commandRelease) return event;
+        self.commandSpace=candidate.space;
+        if([self move:direction] && self.animating) return nullptr;
+    } catch(...) {}
+    if(_commandRelease) { CFRelease(_commandRelease); _commandRelease=nullptr; self.commandSpace=0; }
+    return event;
 }
 - (CGEventRef)handleMouse:(CGEventType)type event:(CGEventRef)event {
     if(CGEventGetIntegerValueField(event,kCGEventSourceUserData)==gesture::sourceTag) return event;
@@ -217,7 +290,23 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         if(_tap && self.running && AXIsProcessTrusted()) CGEventTapEnable(_tap,true);
         return event;
     }
-    if(!self.running) return event;
+    if(!self.running || CGEventGetIntegerValueField(event,kCGEventSourceUserData)==gesture::sourceTag) return event;
+    // Deliver a held release before any new user input so keys and modifiers
+    // cannot reach another app with a stale Command state.
+    if(_commandRelease && (type==kCGEventKeyDown || type==kCGEventKeyUp || type==kCGEventFlagsChanged ||
+       type==kCGEventLeftMouseDown || type==kCGEventLeftMouseDragged || type==kCGEventMouseMoved ||
+       type==kCGEventRightMouseDown || type==kCGEventRightMouseUp || type==kCGEventRightMouseDragged ||
+       type==kCGEventOtherMouseDown || type==kCGEventOtherMouseUp || type==kCGEventOtherMouseDragged ||
+       type==kCGEventScrollWheel)) [self cancelAnimation];
+    if(type==kCGEventRightMouseDown || type==kCGEventRightMouseUp || type==kCGEventRightMouseDragged ||
+       type==kCGEventOtherMouseDown || type==kCGEventOtherMouseUp || type==kCGEventOtherMouseDragged ||
+       type==kCGEventScrollWheel) {
+        self.commandTabOpen=NO; self.commandCandidate=nil; self.commandGeneration++; return event;
+    }
+    if(type==kCGEventLeftMouseDown || type==kCGEventLeftMouseDragged) {
+        self.commandTabOpen=NO; self.commandCandidate=nil; self.commandGeneration++;
+    }
+    if(type==kCGEventMouseMoved) { if(self.commandTabOpen) [self commandSelectionChanged]; return event; }
     if(type==kCGEventLeftMouseDown || type==kCGEventLeftMouseUp || type==kCGEventLeftMouseDragged)
         return [self handleMouse:type event:event];
     if(type==30) {
@@ -229,6 +318,24 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         return event;
     }
     auto key=CGEventGetIntegerValueField(event,kCGKeyboardEventKeycode);
+    auto modifiers=CGEventGetFlags(event)&(kCGEventFlagMaskControl|kCGEventFlagMaskShift|kCGEventFlagMaskAlternate|kCGEventFlagMaskCommand);
+    if(type==kCGEventFlagsChanged) {
+        if(self.commandTabOpen && !(modifiers&kCGEventFlagMaskCommand)) {
+            if((key==54 || key==55) && !(modifiers&(kCGEventFlagMaskControl|kCGEventFlagMaskAlternate)))
+                return [self handleCommandRelease:event];
+            self.commandTabOpen=NO;
+        }
+        return event;
+    }
+    if(type==kCGEventKeyDown) {
+        BOOL switcherModifiers=modifiers==kCGEventFlagMaskCommand || modifiers==(kCGEventFlagMaskCommand|kCGEventFlagMaskShift);
+        if(key==48 && switcherModifiers && self.commandTabs) {
+            self.commandTabOpen=YES; [self commandSelectionChanged];
+        } else if(self.commandTabOpen) {
+            if(switcherModifiers && (key==123 || key==124)) [self commandSelectionChanged];
+            else { self.commandTabOpen=NO; self.commandCandidate=nil; self.commandGeneration++; }
+        }
+    }
     if(key!=123 && key!=124) return event;
     if(type==kCGEventKeyUp) {
         BOOL held=key==123?self.leftHeld:self.rightHeld;
@@ -249,7 +356,7 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         return YES;
     }
     try {
-        SpaceState state=_dockRelease?loadStateAtPoint(self.dockPoint):loadState();
+        SpaceState state=_dockRelease?loadStateAtPoint(self.dockPoint):(_commandRelease?loadStateAtPoint(self.commandPoint):loadState());
         NSInteger target=NSInteger(state.index)+direction;
         if(target<0 || target>=NSInteger(state.spaces.count)) return YES;
         for(NSUInteger i=0;i<state.spaces.count;i++) {
@@ -306,6 +413,16 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
             }
             [self releaseDockClick];
         }
+        if(_commandRelease) {
+            if(actual!=self.commandSpace) {
+                try {
+                    SpaceState state=loadStateAtPoint(self.commandPoint);
+                    int next=SJDockDirection(state.spaces,state.index,self.commandSpace);
+                    if(next && [self move:next] && self.animating) return;
+                } catch(...) {}
+            }
+            [self releaseCommand];
+        }
         if(self.roundTripRemaining && --self.roundTripRemaining==0)
             [self note:[NSString stringWithFormat:@"Round trip passed · %ld ms per move",(long)self.milliseconds]];
         else [self note:@"Ready for your next switch."];
@@ -326,6 +443,7 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
 - (void)cancelAnimation {
     self.generation++; _pending.clear(); self.roundTripRemaining=0;
     self.clickGeneration++; self.dockCandidate=nil;
+    self.commandTabOpen=NO; self.commandCandidate=nil; self.commandGeneration++;
     [self.timer invalidate]; self.timer=nil;
     if(self.gestureOpen) {
         try { [self post:gesture::cancelled progress:-gesture::epsilon*self.direction velocity:gesture::epsilon*self.direction includeVelocity:YES]; }
@@ -333,6 +451,7 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     }
     self.gestureOpen=NO; self.animating=NO;
     [self releaseDockClick];
+    [self releaseCommand];
 }
 - (void)stop {
     self.running=NO; [self cancelAnimation]; self.physicalGesture=NO;

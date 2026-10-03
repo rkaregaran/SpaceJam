@@ -7,7 +7,7 @@
     if ((self = [super init])) {
         _defaults = defaults;
         [_defaults registerDefaults:@{@"durationMS": @100, @"enabled": @YES,
-            @"showMenuBar": @YES, @"dockClicks": @YES, @"hasOpened": @NO}];
+            @"showMenuBar": @YES, @"dockClicks": @YES, @"commandTabs": @YES, @"hasOpened": @NO}];
     }
     return self;
 }
@@ -19,6 +19,8 @@
 - (void)setShowMenuBar:(BOOL)value { [_defaults setBool:value forKey:@"showMenuBar"]; }
 - (BOOL)dockClicks { return [_defaults boolForKey:@"dockClicks"]; }
 - (void)setDockClicks:(BOOL)value { [_defaults setBool:value forKey:@"dockClicks"]; }
+- (BOOL)commandTabs { return [_defaults boolForKey:@"commandTabs"]; }
+- (void)setCommandTabs:(BOOL)value { [_defaults setBool:value forKey:@"commandTabs"]; }
 - (BOOL)hasOpened { return [_defaults boolForKey:@"hasOpened"]; }
 - (void)setHasOpened:(BOOL)value { [_defaults setBool:value forKey:@"hasOpened"]; }
 @end

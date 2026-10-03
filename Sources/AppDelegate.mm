@@ -73,6 +73,7 @@ static NSBox *card(NSRect frame) {
 @property(nonatomic) NSTextField *statusLabel;
 @property(nonatomic) NSButton *menuCheckbox;
 @property(nonatomic) NSButton *dockCheckbox;
+@property(nonatomic) NSButton *commandCheckbox;
 @property(nonatomic) NSButton *loginCheckbox;
 @property(nonatomic) NSTimer *permissionTimer;
 @property(nonatomic) BOOL trusted;
@@ -95,6 +96,7 @@ static NSBox *card(NSRect frame) {
     self.settings=[[SJSettings alloc] initWithDefaults:defaults];
     self.engine=[SJSwitchEngine new]; self.engine.milliseconds=self.settings.milliseconds;
     self.engine.dockClicks=self.settings.dockClicks;
+    self.engine.commandTabs=self.settings.commandTabs;
     __weak SJAppDelegate *weakSelf=self;
     self.engine.didChange=^{ [weakSelf refreshUI]; };
     [self buildWindow];
@@ -117,23 +119,23 @@ static NSBox *card(NSRect frame) {
     self.settings.hasOpened=YES;
 }
 - (void)buildWindow {
-    self.window=[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,640,628)
+    self.window=[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,640,664)
         styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable
         backing:NSBackingStoreBuffered defer:NO];
     self.window.title=@"SpaceJam"; self.window.delegate=self;
     self.window.releasedWhenClosed=NO; self.window.backgroundColor=NSColor.windowBackgroundColor;
     self.window.collectionBehavior=NSWindowCollectionBehaviorCanJoinAllSpaces;
     NSView *root=self.window.contentView;
-    NSImageView *brand=[[NSImageView alloc] initWithFrame:NSMakeRect(28,554,48,48)];
+    NSImageView *brand=[[NSImageView alloc] initWithFrame:NSMakeRect(28,590,48,48)];
     brand.image=NSApp.applicationIconImage; [root addSubview:brand];
-    [root addSubview:label(@"SpaceJam",30,NSFontWeightBold,NSMakeRect(90,564,310,40))];
-    NSTextField *subtitle=label(@"Your desktops. At your speed.",13,NSFontWeightRegular,NSMakeRect(90,543,350,22));
+    [root addSubview:label(@"SpaceJam",30,NSFontWeightBold,NSMakeRect(90,600,310,40))];
+    NSTextField *subtitle=label(@"Your desktops. At your speed.",13,NSFontWeightRegular,NSMakeRect(90,579,350,22));
     subtitle.textColor=NSColor.secondaryLabelColor; [root addSubview:subtitle];
-    self.enabledSwitch=[[NSSwitch alloc] initWithFrame:NSMakeRect(565,570,48,28)];
+    self.enabledSwitch=[[NSSwitch alloc] initWithFrame:NSMakeRect(565,606,48,28)];
     self.enabledSwitch.target=self; self.enabledSwitch.action=@selector(toggleEnabled:); [root addSubview:self.enabledSwitch];
-    self.enabledLabel=label(@"Enabled",12,NSFontWeightMedium,NSMakeRect(486,574,72,22)); [root addSubview:self.enabledLabel];
+    self.enabledLabel=label(@"Enabled",12,NSFontWeightMedium,NSMakeRect(486,610,72,22)); [root addSubview:self.enabledLabel];
 
-    NSBox *permission=card(NSMakeRect(24,326,592,192)); [root addSubview:permission]; NSView *p=permission.contentView;
+    NSBox *permission=card(NSMakeRect(24,362,592,192)); [root addSubview:permission]; NSView *p=permission.contentView;
     self.permissionIcon=[[NSImageView alloc] initWithFrame:NSMakeRect(20,143,24,24)]; [p addSubview:self.permissionIcon];
     [p addSubview:label(@"Accessibility",17,NSFontWeightSemibold,NSMakeRect(54,145,270,28))];
     self.permissionState=label(@"Required",12,NSFontWeightSemibold,NSMakeRect(410,147,160,24));
@@ -145,7 +147,7 @@ static NSBox *card(NSRect frame) {
     self.verifyButton.hidden=YES; [p addSubview:self.verifyButton];
     [p addSubview:button(@"Open Settings…",self,@selector(openAccessibility:),NSMakeRect(366,29,206,36))];
 
-    NSBox *speed=card(NSMakeRect(24,152,592,156)); [root addSubview:speed]; NSView *s=speed.contentView;
+    NSBox *speed=card(NSMakeRect(24,188,592,156)); [root addSubview:speed]; NSView *s=speed.contentView;
     [s addSubview:label(@"Animation duration",17,NSFontWeightSemibold,NSMakeRect(20,112,300,28))];
     self.durationField=[[NSTextField alloc] initWithFrame:NSMakeRect(462,108,74,32)];
     self.durationField.font=[NSFont monospacedDigitSystemFontOfSize:17 weight:NSFontWeightMedium];
@@ -162,7 +164,9 @@ static NSBox *card(NSRect frame) {
     NSTextField *hint=label(@"Smaller number, quicker desktop slide.",12,NSFontWeightRegular,NSMakeRect(20,12,552,23));
     hint.textColor=NSColor.secondaryLabelColor; [s addSubview:hint];
     self.dockCheckbox=[NSButton checkboxWithTitle:@"Speed up Dock app clicks" target:self action:@selector(dockPreference:)];
-    self.dockCheckbox.frame=NSMakeRect(28,110,552,26); [root addSubview:self.dockCheckbox];
+    self.dockCheckbox.frame=NSMakeRect(28,146,552,26); [root addSubview:self.dockCheckbox];
+    self.commandCheckbox=[NSButton checkboxWithTitle:@"Speed up Command–Tab" target:self action:@selector(commandPreference:)];
+    self.commandCheckbox.frame=NSMakeRect(28,110,552,26); [root addSubview:self.commandCheckbox];
     self.menuCheckbox=[NSButton checkboxWithTitle:@"Show in menu bar" target:self action:@selector(menuPreference:)];
     self.menuCheckbox.frame=NSMakeRect(28,74,260,26); [root addSubview:self.menuCheckbox];
     self.loginCheckbox=[NSButton checkboxWithTitle:@"Open at login" target:self action:@selector(loginPreference:)];
@@ -179,6 +183,7 @@ static NSBox *card(NSRect frame) {
     self.trusted=trusted; self.didReadPermission=YES;
     self.engine.milliseconds=self.settings.milliseconds;
     self.engine.dockClicks=self.settings.dockClicks;
+    self.engine.commandTabs=self.settings.commandTabs;
     if(!trusted || !self.settings.enabled) { if(self.engine.running) [self.engine stop]; }
     else if((changed || retry) && !self.engine.running) [self.engine start];
     if(trusted && self.onboarding.visible) [self.onboarding close];
@@ -198,12 +203,13 @@ static NSBox *card(NSRect frame) {
     self.enabledLabel.stringValue=self.settings.enabled?@"Enabled":@"Paused";
     if(self.window.firstResponder!=self.durationField.currentEditor) self.durationField.integerValue=self.settings.milliseconds;
     self.durationSlider.integerValue=self.settings.milliseconds;
+    self.commandCheckbox.state=self.settings.commandTabs?NSControlStateValueOn:NSControlStateValueOff;
     self.dockCheckbox.state=self.settings.dockClicks?NSControlStateValueOn:NSControlStateValueOff;
     self.menuCheckbox.state=self.settings.showMenuBar?NSControlStateValueOn:NSControlStateValueOff;
     self.loginCheckbox.state=SMAppService.mainAppService.status==SMAppServiceStatusEnabled?NSControlStateValueOn:NSControlStateValueOff;
     if(!allowed) self.statusLabel.stringValue=@"Enable Accessibility above to get started.";
     else if(!self.settings.enabled) self.statusLabel.stringValue=@"Paused. Your usual desktop shortcuts are active.";
-    else self.statusLabel.stringValue=self.preview?@"Ready for Control–Left/Right and Dock app clicks.":self.engine.message;
+    else self.statusLabel.stringValue=self.preview?@"Ready for desktop switching.":self.engine.message;
     self.enabledMenu.state=self.settings.enabled?NSControlStateValueOn:NSControlStateValueOff;
     self.testMenu.enabled=self.engine.running;
     self.statusItem.button.toolTip=self.engine.running?@"SpaceJam · enabled":@"SpaceJam · paused";
@@ -253,6 +259,7 @@ static NSBox *card(NSRect frame) {
     self.durationField.integerValue=self.settings.milliseconds; self.durationSlider.integerValue=self.settings.milliseconds;
 }
 - (void)controlTextDidEndEditing:(NSNotification *)notification { if(notification.object==self.durationField) [self durationTyped:nil]; }
+- (void)commandPreference:(NSButton *)sender { self.settings.commandTabs=sender.state==NSControlStateValueOn; self.engine.commandTabs=self.settings.commandTabs; [self refreshUI]; }
 - (void)dockPreference:(NSButton *)sender { self.settings.dockClicks=sender.state==NSControlStateValueOn; self.engine.dockClicks=self.settings.dockClicks; [self refreshUI]; }
 - (void)menuPreference:(NSButton *)sender { self.settings.showMenuBar=sender.state==NSControlStateValueOn; [self updateMenuBar]; [self refreshUI]; }
 - (void)hideMenu:(id)sender { self.settings.showMenuBar=NO; [self showSettings:nil]; [self updateMenuBar]; [self refreshUI]; }

@@ -12,7 +12,8 @@ python3 scripts/package.py --development
 ```
 
 The build compiles with warnings treated as errors, verifies the app signature,
-and runs event-format and preferences tests. Neither test posts input.
+and runs event-format, route, Command–Tab routing, and preferences tests.
+These tests do not post input.
 `--screenshots` renders the actual native views with illustrative permission
 states; it does not grant permissions or start the switching engine.
 
@@ -22,9 +23,10 @@ states; it does not grant permissions or start the switching engine.
   polling, login service, and lifecycle handling.
 - `Sources/Settings.mm`: persisted duration, enable state, and menu visibility.
 - `Sources/SwitchEngine.mm`: shortcut event tap, display/desktop selection,
-  Dock click interception, bounded queue, animation, cancellation, and commit verification.
+  Dock/Command–Tab interception, bounded queue, animation, cancellation, and commit verification.
 - `Sources/DockTarget.mm`: asynchronous Dock hit testing and focused-window
-  desktop lookup; no window titles or content are read.
+  desktop lookup, plus native app-switcher selection; no window titles or content
+  are read.
 - `Sources/SpaceRoute.h`: validation of ordinary-desktop routes for Dock clicks.
 - `Sources/ThirdParty/GestureEvents.h`: native IOHID gesture payload and
   CoreGraphics serialization, adapted from FasterSwiper.
@@ -52,7 +54,7 @@ otherwise. Permission revocation stops the listener. An unsuccessful desktop
 commit stops the engine until the user toggles Enabled or retries after a
 lifecycle change.
 
-SpaceJam reads only the arrow key fields it needs. It does not record keystrokes,
+SpaceJam reads shortcut keycodes, modifiers, and repeat state. It does not record keystrokes,
 write an input log, collect analytics, or make network requests at runtime.
 
 With Dock acceleration enabled, left-button down passes through and starts a
@@ -72,6 +74,19 @@ thread, allows one outstanding request, and discards stale results. Some apps
 report an empty AXWindows list for off-desktop windows; their focused/main
 window is used, so unusual multiwindow apps still need manual validation.
 
+With Command–Tab acceleration enabled, native Tab/Shift–Tab and arrow events
+pass through. A background request polls Dock's AXProcessSwitcherList and
+AXSelectedChildren while Command is held; it uses a uniquely matching regular
+running application's display name. Each navigation change invalidates the
+candidate and waits 20 ms before querying the updated native selection. An
+unresolved final Command release passes through immediately. A ready target
+uses its window's display, validates an ordinary-desktop route, defers the
+release, and replays it after commit. Both Command keys are supported; only
+release of the last held Command key can trigger the move. Escape, unrelated
+keys, and clicks leave activation native. New input during a deferred release
+cancels the gesture and inserts the release before that input through the tap.
+Feature disable, stop, sleep, and display changes also return the release.
+
 ## Validation
 
 Tests cover 19 gesture cases across both directions, natural scrolling,
@@ -81,7 +96,9 @@ temporary domain and check defaults, persistence, and corrupted-duration
 bounds. Run these through the build command.
 Thirteen Dock route cases cover adjacency, distant targets, same/other display,
 fullscreen routes, and malformed desktop metadata. Live Dock checks are
-recorded separately in INPUT_PATHS.md.
+recorded separately in INPUT_PATHS.md. Command–Tab routing tests cover
+forward/reverse navigation, arrows, both Command keys, cancellation, extra
+modifiers, feature disable, synthetic events, and untouched unresolved releases.
 
 GitHub CI uses the `xcode-27` public-preview runner to build the app and execute
 the non-input tests. Test and icon-generator executables have a macOS 13
