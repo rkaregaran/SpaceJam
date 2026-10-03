@@ -45,7 +45,7 @@ using the actual final DMG hash. It refuses to publish an ad hoc build.
   drag-to-Settings onboarding, permission revocation, reopening with the menu
   icon hidden, duration persistence, and login startup.
 - Review `docs/blog/apple-let-us-set-animation-speed.md` before publication.
-- Create the `rkaregaran/SpaceJam` GitHub repository and push the reviewed files.
+- Confirm the `rkaregaran/SpaceJam` GitHub repository is public and push the reviewed files.
 - Replace the cask template with the generated `Casks/spacejam.rb` and commit it.
 - Publish tag `v0.1.0` with the files listed in `dist/release-manifest.json`.
 

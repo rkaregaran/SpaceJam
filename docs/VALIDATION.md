@@ -1,4 +1,4 @@
-# Validation — October 2, 2026
+# Validation — October 3, 2026
 
 Host: Apple silicon, macOS 27.2 build 26B5091g. `csrutil status` confirms full
 System Integrity Protection is enabled. The earlier Dock patches are restored.
@@ -9,7 +9,13 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
   verification with its local development signature.
 - The release build is also signed with the existing Developer ID Application
   identity, hardened runtime, and a secure timestamp. Its strict signature
-  verification passes. Notarization is still pending.
+  verification passes.
+- Apple accepted notarization for the release app and DMG. Both have validated
+  stapled tickets and pass Gatekeeper as **Notarized Developer ID**.
+- The final public DMG mounts read-only with the correct Applications symlink.
+  Its app and the extracted public ZIP have valid signatures and stapled tickets,
+  and their executables match the release build. The ZIP app passes Gatekeeper.
+  Release-manifest checksums and the generated Homebrew cask match the final files.
 - 19 event-format cases cover both directions, natural scrolling, gesture
   phases, malformed-data refusal, and source tagging. No input is posted by
   these tests.
@@ -37,8 +43,7 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
 - Confirm the physical app-tile drag into Settings on a clean installation.
 - Test Open at login after signing in again, sleep/wake, display changes,
   permission revocation, fullscreen fallback, and rapid queued shortcuts.
-- Obtain accepted notarization for app and DMG,
-  staple tickets, and pass Gatekeeper assessment on a downloaded copy.
+- Confirm Gatekeeper assessment on a copy downloaded from the published release.
 - Exercise the terminal installer and Homebrew cask against actual uploaded,
   signed release assets. GitHub-hosted CI has not run yet.
 
