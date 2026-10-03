@@ -25,6 +25,12 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
 - Open at login is registered successfully for the installed signed app;
   the settings checkbox reflects `SMAppServiceStatusEnabled`. Actual startup
   after signing in again still needs a user test.
+- The public GitHub release `v0.1.0` is published. Downloaded DMG, ZIP, and
+  checksum files match the release manifest; the downloaded ZIP app passes
+  signature, stapled-ticket, and Gatekeeper checks.
+- The documented Homebrew tap registers successfully and `brew fetch --cask
+  rkaregaran/spacejam/spacejam` downloads the published DMG and verifies its hash.
+  GitHub's build workflow passes for the release commit.
 - 19 event-format cases cover both directions, natural scrolling, gesture
   phases, malformed-data refusal, and source tagging. No input is posted by
   these tests.
@@ -47,14 +53,14 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
   draft. Production pages and RSS exclude it. Its development preview displays
   the article in the existing blog layout with the app image.
 
-## Still required before a public release
+## Remaining manual checks
 
 - Confirm the physical app-tile drag into Settings on a clean installation.
 - Test Open at login after signing in again, sleep/wake, display changes,
   permission revocation, fullscreen fallback, and rapid queued shortcuts.
-- Confirm Gatekeeper assessment on a copy downloaded from the published release.
-- Exercise the terminal installer and Homebrew cask against actual uploaded,
-  signed release assets. GitHub-hosted CI has not run yet.
+- Exercise complete terminal and Homebrew installation on a clean Mac. Public
+  downloads and Homebrew fetching are verified; this Mac already has SpaceJam
+  installed, so the terminal installer correctly refuses to overwrite it.
 
 Rebuilding the ad hoc development app invalidated its earlier Accessibility
 grant. The Developer ID build now needs its initial refreshed entry. Subsequent
