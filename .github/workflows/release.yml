@@ -2,6 +2,11 @@ name: Signed release
 
 on:
   workflow_dispatch:
+    inputs:
+      verify_only:
+        description: Build and notarize artifacts without publishing a release
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -31,12 +36,15 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          SPACEJAM_VERIFY_ONLY: ${{ inputs.verify_only }}
         run: |
           set -euo pipefail
           spacejam_version="$(cat VERSION)"
           [[ "$spacejam_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION" >&2; exit 1; }
           spacejam_existing="$(git ls-remote --tags origin "refs/tags/v${spacejam_version}")"
-          [[ -z "$spacejam_existing" ]] || { echo "This version is already tagged. Bump VERSION first." >&2; exit 1; }
+          if [[ "$SPACEJAM_VERIFY_ONLY" != true && -n "$spacejam_existing" ]]; then
+            echo "This version is already tagged. Bump VERSION first." >&2; exit 1
+          fi
           for spacejam_secret in DEVELOPER_ID_CERTIFICATE_BASE64 DEVELOPER_ID_CERTIFICATE_PASSWORD DEVELOPER_ID_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_SPECIFIC_PASSWORD; do
             [[ -n "${!spacejam_secret}" ]] || { echo "Missing release secret: $spacejam_secret" >&2; exit 1; }
           done
@@ -92,6 +100,7 @@ jobs:
             Casks/spacejam.rb
 
       - name: Update Homebrew cask, tag, and publish GitHub release
+        if: ${{ !inputs.verify_only }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

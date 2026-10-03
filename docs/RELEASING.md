@@ -93,6 +93,10 @@ material or print secret values. This setup follows
 [GitHub's signing guidance](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications).
 The local Keychain profile is not copied automatically to GitHub.
 
+Select **verify_only** to exercise the entire signing, notarization, and packaging
+pipeline without changing the cask, tags, or public release. This mode allows an
+already released VERSION and saves the verified artifacts on the Actions run.
+
 The workflow imports credentials into a temporary runner keychain, builds and
 tests, notarizes/staples the app and DMG, verifies Gatekeeper, and saves the
 artifacts for 30 days. It then commits the exact DMG checksum to the Homebrew
