@@ -11,8 +11,7 @@ Choose how quickly your Mac slides between desktops. SpaceJam works with
 
 **Apple silicon · macOS 27 · at least two ordinary desktops**
 
-The first signed release is being prepared. The download and installation
-commands below become available when it is published.
+Downloads are Developer ID signed and notarized by Apple.
 
 1. [Download the latest DMG](https://github.com/rkaregaran/SpaceJam/releases/latest).
 2. Open it and drag **SpaceJam** into **Applications**.

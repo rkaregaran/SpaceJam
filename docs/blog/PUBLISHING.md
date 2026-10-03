@@ -5,15 +5,13 @@ The article is a draft for the existing blog, not a new site. Review
 
 Suggested slug: `apple-let-us-set-animation-speed`
 
-Suggested excerpt: "I want to keep the desktop slide and choose how quickly it
-happens. SpaceJam is my workaround. Apple should make this a native setting."
+Suggested excerpt: "Switching between desktop spaces feels too slow. SpaceJam speeds it up, but macOS should let users adjust animation speed directly."
 
 The live site uses Astro and Markdown in `src/content/writing`. Add its standard
 frontmatter with `draft: true`, copy the settings image into `public/images/spacejam`,
 and use `/images/spacejam/settings.png` in the article. Drafts are visible in
-development and excluded from the production build. The text currently
-describes downloads as being prepared. Once a signed release is live, change
-that paragraph to installation instructions and link to it.
+development and excluded from the production build. Add a download link once
+a signed release is available.
 
 Do not publish a download promise before the release exists. No production
 site content has been published by the local draft.
