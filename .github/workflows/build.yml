@@ -1,0 +1,25 @@
+name: Build and check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: xcode-27
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build and run non-input tests
+        run: python3 scripts/build.py
+      - name: Check installer and cask syntax
+        run: |
+          bash -n scripts/install.sh
+          ruby -c Casks/spacejam.rb.in

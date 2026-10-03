@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+spacejam-inspect*.json
+spacejam-attach*.json
+spacejam-state*.json
+spacejam-swipe-state*.json
+gestures/build/
+build/
+dist/
+.DS_Store
+*.p12
+*.p8
+*.key
+*.mobileprovision
+.env
+.env.*
+# Earlier local experiments are preserved on disk, excluded from this app repo.
+research/
+gestures/
+spacejam*.py
+spacejam*.json
+SPEC.md
+RESULTS.md
+tests/test_*.py
+Tests/test_*.py
+.local/
