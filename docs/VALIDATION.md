@@ -16,6 +16,15 @@ System Integrity Protection is enabled. The earlier Dock patches are restored.
   Its app and the extracted public ZIP have valid signatures and stapled tickets,
   and their executables match the release build. The ZIP app passes Gatekeeper.
   Release-manifest checksums and the generated Homebrew cask match the final files.
+- The signed release is installed at `/Applications/SpaceJam.app` and passes
+  signature, stapled-ticket, and Gatekeeper checks there. The running process is
+  the Applications copy. After replacing the stale development permission entry
+  with that signed copy, Accessibility is recognized and an actual **75 ms**
+  desktop round trip passes. Permission, duration, and hidden menu preference
+  survive quitting and reopening the signed app.
+- Open at login is registered successfully for the installed signed app;
+  the settings checkbox reflects `SMAppServiceStatusEnabled`. Actual startup
+  after signing in again still needs a user test.
 - 19 event-format cases cover both directions, natural scrolling, gesture
   phases, malformed-data refusal, and source tagging. No input is posted by
   these tests.
