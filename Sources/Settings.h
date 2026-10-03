@@ -9,6 +9,7 @@ static inline NSInteger SJDuration(NSInteger value) {
 @property(nonatomic) NSInteger milliseconds;
 @property(nonatomic) BOOL enabled;
 @property(nonatomic) BOOL showMenuBar;
+@property(nonatomic) BOOL dockClicks;
 @property(nonatomic) BOOL hasOpened;
 - (instancetype)initWithDefaults:(NSUserDefaults *)defaults;
 @end

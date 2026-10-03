@@ -71,7 +71,7 @@ def main():
         (stage / "Install SpaceJam.txt").write_text(
             "Drag SpaceJam.app to Applications.\n\n"
             "Open SpaceJam from Applications. Click Open Settings, then drag the app tile into the permission list and enable its switch.\n\n"
-            "SpaceJam changes desktop switching from Control–Left/Right and mouse shortcuts. It runs in the background; reopen it to change settings.\n"
+            "SpaceJam changes desktop switching from Control–Left/Right, mouse shortcuts, and supported Dock app clicks. It runs in the background; reopen it to change settings.\n"
             + ("\nDEVELOPMENT BUILD: not notarized for public download.\n" if args.development else ""))
         run("/usr/bin/hdiutil", "create", "-volname", "SpaceJam", "-srcfolder", stage,
             "-format", "UDZO", "-ov", dmg_path)

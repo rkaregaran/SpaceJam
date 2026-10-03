@@ -3,6 +3,27 @@
 Host: Apple silicon, macOS 27.2 build 26B5091g. `csrutil status` confirms full
 System Integrity Protection is enabled. The earlier Dock patches are restored.
 
+## Version 0.2.0 distribution checks
+
+- Developer ID release build passes warning-as-error compilation, 19 gesture
+  serialization cases, 13 Dock route cases, preferences tests, and strict
+  signature verification. Live Dock and installed-engine checks are in
+  [INPUT_PATHS.md](INPUT_PATHS.md).
+- Apple accepted notarization for the new app and DMG. Both have validated
+  stapled tickets and pass Gatekeeper as Notarized Developer ID.
+- The DMG mounts read-only with an Applications symlink. Its app and the
+  extracted ZIP have valid signatures/tickets and executables identical to the
+  release build. The ZIP app passes Gatekeeper.
+- Release-manifest hashes, SHA256SUMS, and the generated v0.2.0 Homebrew cask
+  match the final files. Installer/cask syntax and Python compilation pass.
+- The refreshed native settings screenshot includes the Dock checkbox and
+  v0.2.0 footer. Layout was visually checked.
+- The manual GitHub Actions release workflow passes actionlint and every shell
+  step passes Bash syntax checks. The known `xcode-27` public-preview runner
+  label is excluded from the older linter's label check; existing CI using it
+  passes. No release signing secrets are configured in GitHub yet, so signed
+  Actions execution remains unverified until those secrets are provided.
+
 ## Passed
 
 - Native app builds with warnings treated as errors and passes strict signature

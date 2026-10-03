@@ -49,7 +49,7 @@ def main():
     iconset = BUILD / "SpaceJam.iconset"
     run(BUILD / "icon-builder", iconset)
     run("/usr/bin/iconutil", "-c", "icns", iconset, "-o", resources / "SpaceJam.icns")
-    sources = [ROOT / "Sources" / name for name in ("main.mm", "AppDelegate.mm", "Settings.mm", "SwitchEngine.mm")]
+    sources = [ROOT / "Sources" / name for name in ("main.mm", "AppDelegate.mm", "Settings.mm", "SwitchEngine.mm", "DockTarget.mm")]
     run(*compiler, "-framework", "AppKit", "-framework", "ApplicationServices", "-framework", "QuartzCore",
         "-framework", "ServiceManagement", "-framework", "Carbon", "-F/System/Library/PrivateFrameworks",
         "-framework", "SkyLight", *sources, "-o", executable)
@@ -64,6 +64,7 @@ def main():
     run(*signing, APP)
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", APP)
     for name, files in (("event-protocol", ["Tests/EventProtocol.mm"]),
+                        ("space-route", ["Tests/SpaceRoute.mm"]),
                         ("settings", ["Tests/Settings.mm", "Sources/Settings.mm"])):
         test = BUILD / f"test-{name}"
         run(*utility_compiler, "-framework", "AppKit", "-framework", "ApplicationServices", *[ROOT / file for file in files], "-o", test)

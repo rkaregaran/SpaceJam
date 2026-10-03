@@ -22,7 +22,10 @@ states; it does not grant permissions or start the switching engine.
   polling, login service, and lifecycle handling.
 - `Sources/Settings.mm`: persisted duration, enable state, and menu visibility.
 - `Sources/SwitchEngine.mm`: shortcut event tap, display/desktop selection,
-  bounded queue, animation, cancellation, and commit verification.
+  Dock click interception, bounded queue, animation, cancellation, and commit verification.
+- `Sources/DockTarget.mm`: asynchronous Dock hit testing and focused-window
+  desktop lookup; no window titles or content are read.
+- `Sources/SpaceRoute.h`: validation of ordinary-desktop routes for Dock clicks.
 - `Sources/ThirdParty/GestureEvents.h`: native IOHID gesture payload and
   CoreGraphics serialization, adapted from FasterSwiper.
 - `scripts/`: build, gated release packaging, and end-user installation.
@@ -52,6 +55,23 @@ lifecycle change.
 SpaceJam reads only the arrow key fields it needs. It does not record keystrokes,
 write an input log, collect analytics, or make network requests at runtime.
 
+With Dock acceleration enabled, left-button down passes through and starts a
+bounded background Accessibility lookup. A ready, unmodified, single-click
+release inside the same Dock app tile can be deferred until the target desktop
+commits. Replaying the tagged release lets Dock perform normal activation.
+Dragging, modified/multiple clicks, slow/failed lookups, minimized focused
+windows, conflicting accessible app windows, other displays, and fullscreen
+routes remain native. The Dock preference that disables switching to an app's
+desktop is respected. Several desktops are traversed as adjacent moves, each
+using the selected duration; direct distant jumps are avoided because upstream
+reports occasional bounce animations on macOS 27.
+
+A new click, physical gesture, pause, feature disable, or lifecycle cancellation
+returns any deferred release to Dock. Target lookup runs off the event-tap
+thread, allows one outstanding request, and discards stale results. Some apps
+report an empty AXWindows list for off-desktop windows; their focused/main
+window is used, so unusual multiwindow apps still need manual validation.
+
 ## Validation
 
 Tests cover 19 gesture cases across both directions, natural scrolling,
@@ -59,6 +79,9 @@ all four phases, and malformed serialized data. They verify both the embedded
 payload and restored synthetic source tag. Preferences tests use an isolated
 temporary domain and check defaults, persistence, and corrupted-duration
 bounds. Run these through the build command.
+Thirteen Dock route cases cover adjacency, distant targets, same/other display,
+fullscreen routes, and malformed desktop metadata. Live Dock checks are
+recorded separately in INPUT_PATHS.md.
 
 GitHub CI uses the `xcode-27` public-preview runner to build the app and execute
 the non-input tests. Test and icon-generator executables have a macOS 13

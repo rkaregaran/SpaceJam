@@ -3,7 +3,8 @@
 **Your desktops. At your speed.**
 
 Choose how quickly your Mac slides between desktops. SpaceJam works with
-**Control–Left/Right** and mouse buttons mapped to those shortcuts.
+**Control–Left/Right**, mouse buttons mapped to those shortcuts, and supported
+clicks on running apps in the Dock.
 
 ![SpaceJam settings](docs/images/settings.png)
 
@@ -50,14 +51,18 @@ password to write there. It leaves an existing installation intact.
 - Turn off **Show in menu bar** for a quieter desktop. Reopen the app from
   Applications to bring settings back.
 - Enable **Open at login** to start it automatically after signing in.
+- **Speed up Dock app clicks** uses the selected duration to reach an app's
+  desktop before activating it. Turn this off to keep native Dock timing.
 
 Physical trackpad swipes, numbered desktop shortcuts, Mission Control, and
 fullscreen desktop transitions retain their native behavior. This release
-changes ordinary desktop switching through Control–Left/Right.
+changes ordinary desktop switching through Control–Left/Right and supported
+Dock app clicks. Distant Dock destinations use adjacent moves, each with the
+selected duration; fullscreen, other-display, and ambiguous clicks stay native.
 
 ## How it works
 
-The released **v0.1.0** app turns Control–Left/Right into a synthetic horizontal
+The **v0.2.0** app turns Control–Left/Right into a synthetic horizontal
 swipe with a configurable duration. macOS still performs the desktop transition;
 SpaceJam supplies the gesture's progress and ending velocity.
 
@@ -90,6 +95,13 @@ SpaceJam supplies the gesture's progress and ending velocity.
 The implementation is in [SwitchEngine.mm](Sources/SwitchEngine.mm) and
 [GestureEvents.h](Sources/ThirdParty/GestureEvents.h).
 
+For Dock app clicks, mouse down passes through while a background Accessibility
+lookup identifies the icon's app and its focused/main window's desktop. A
+supported mouse up is deferred while the engine switches, then delivered to
+Dock for normal activation. Dragging and modified clicks remain native, as do
+clicks whose lookup is not ready. See [input-path validation](docs/INPUT_PATHS.md)
+for measured results and remaining manual checks.
+
 ### Permissions, safeguards, and risks
 
 - **Accessibility is a broad trust grant.** It permits an app to observe input
@@ -98,6 +110,8 @@ The implementation is in [SwitchEngine.mm](Sources/SwitchEngine.mm) and
   uses keycodes, modifiers, and repeat state rather than recording typed text.
   Desktop detection reads display/desktop IDs and on-screen window metadata
   (owner, layer, and bounds), without capturing screen images.
+  Dock detection reads app URLs, window IDs, and minimized state through
+  Accessibility; it does not read window titles or content.
   The app has no input log, analytics, or runtime network requests. Settings are
   stored locally in `NSUserDefaults`. Grant access only to a copy you trust;
   see [Apple's explanation of Accessibility access](https://support.apple.com/guide/mac-help/mh43185/mac).

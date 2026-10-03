@@ -4,6 +4,8 @@
 // native fallback, lifecycle cancellation, and a window-free engine.
 // Upstream notices and license: ../THIRD_PARTY_NOTICES.md and ../LICENSES/.
 #import "SwitchEngine.h"
+#import "DockTarget.h"
+#import "SpaceRoute.h"
 #import <QuartzCore/QuartzCore.h>
 #include <deque>
 #include "ThirdParty/GestureEvents.h"
@@ -40,11 +42,8 @@ static bool overviewVisible() {
     }
     return false;
 }
-static SpaceState loadState() {
+static SpaceState loadStateAtPoint(CGPoint point) {
     if(overviewVisible()) throw std::runtime_error("Mission Control is open; using native switching");
-    CGEventRef pointer=CGEventCreate(nullptr);
-    if(!pointer) throw std::runtime_error("Cannot read mouse display");
-    CGPoint point=CGEventGetLocation(pointer); CFRelease(pointer);
     CGDirectDisplayID displays[16]; uint32_t count=0;
     if(CGGetDisplaysWithPoint(point,16,displays,&count)!=kCGErrorSuccess || !count)
         throw std::runtime_error("Cannot find display under mouse");
@@ -72,6 +71,12 @@ static SpaceState loadState() {
     }
     throw std::runtime_error("Cannot identify the active desktop under the mouse");
 }
+static SpaceState loadState() {
+    CGEventRef pointer=CGEventCreate(nullptr);
+    if(!pointer) throw std::runtime_error("Cannot read mouse display");
+    CGPoint point=CGEventGetLocation(pointer); CFRelease(pointer);
+    return loadStateAtPoint(point);
+}
 
 @interface SJSwitchEngine ()
 @property(nonatomic, readwrite) BOOL running;
@@ -92,19 +97,41 @@ static SpaceState loadState() {
 @property(nonatomic) NSUInteger roundTripRemaining;
 @property(nonatomic) BOOL leftHeld;
 @property(nonatomic) BOOL rightHeld;
-- (CGEventRef)handle:(CGEventType)type event:(CGEventRef)event;
+@property(nonatomic) NSUInteger clickGeneration;
+@property(nonatomic) SJDockTarget *dockCandidate;
+@property(nonatomic) CGPoint dockPoint;
+@property(nonatomic) CFTimeInterval clickStarted;
+@property(nonatomic) int64_t dockSpace;
+@property(nonatomic) BOOL dockLookupBusy;
+- (CGEventRef)handle:(CGEventType)type event:(CGEventRef)event proxy:(CGEventTapProxy)proxy;
 @end
 
 static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *context) {
-    @autoreleasepool { return [(__bridge SJSwitchEngine *)context handle:type event:event]; }
+    @autoreleasepool { return [(__bridge SJSwitchEngine *)context handle:type event:event proxy:proxy]; }
 }
 
 @implementation SJSwitchEngine {
     CFMachPortRef _tap;
     CFRunLoopSourceRef _source;
     std::deque<int> _pending;
+    dispatch_queue_t _dockLookup;
+    CGEventRef _dockRelease;
+    CGEventTapProxy _activeProxy;
 }
-- (instancetype)init { if ((self=[super init])) { _milliseconds=100; _message=@"Ready"; } return self; }
+- (instancetype)init {
+    if ((self=[super init])) {
+        _milliseconds=100; _dockClicks=YES; _message=@"Ready";
+        _dockLookup=dispatch_queue_create("dev.rzkr.SpaceJam.dock-lookup",DISPATCH_QUEUE_SERIAL);
+    }
+    return self;
+}
+- (void)setDockClicks:(BOOL)enabled {
+    _dockClicks=enabled;
+    if(!enabled) {
+        self.clickGeneration++; self.dockCandidate=nil;
+        if(_dockRelease) [self cancelAnimation];
+    }
+}
 - (void)note:(NSString *)message { self.message=message; if(self.didChange) self.didChange(); }
 - (BOOL)start {
     if(self.running) return YES;
@@ -117,20 +144,82 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         CFRelease(check);
     } catch(const std::exception& error) { [self note:[NSString stringWithUTF8String:error.what()]]; return NO; }
     _tap=CGEventTapCreate(kCGSessionEventTap,kCGHeadInsertEventTap,kCGEventTapOptionDefault,
-        CGEventMaskBit(kCGEventKeyDown)|CGEventMaskBit(kCGEventKeyUp)|CGEventMaskBit(30),tapCallback,(__bridge void *)self);
+        CGEventMaskBit(kCGEventKeyDown)|CGEventMaskBit(kCGEventKeyUp)|CGEventMaskBit(30)|
+        CGEventMaskBit(kCGEventLeftMouseDown)|CGEventMaskBit(kCGEventLeftMouseUp)|CGEventMaskBit(kCGEventLeftMouseDragged),
+        tapCallback,(__bridge void *)self);
     if(!_tap) { [self note:@"macOS denied access. Check Accessibility, then try enabling again."]; return NO; }
     _source=CFMachPortCreateRunLoopSource(nullptr,_tap,0);
     if(!_source) { CFRelease(_tap); _tap=nullptr; [self note:@"Could not start SpaceJam. Native shortcuts are active."]; return NO; }
     CFRunLoopAddSource(CFRunLoopGetMain(),_source,kCFRunLoopCommonModes);
     CGEventTapEnable(_tap,true); self.running=YES;
-    [self note:@"Ready for your mouse buttons and Control–Left/Right."]; return YES;
+    [self note:self.dockClicks?@"Ready for Control–Left/Right and Dock app clicks.":@"Ready for Control–Left/Right."]; return YES;
 }
-- (CGEventRef)handle:(CGEventType)type event:(CGEventRef)event {
+- (void)releaseDockClick {
+    if(!_dockRelease) return;
+    CGEventSetIntegerValueField(_dockRelease,kCGEventSourceUserData,gesture::sourceTag);
+    // During a new physical click, insert the old release through this tap
+    // before passing on the new down; timer/lifecycle callbacks post normally.
+    if(_activeProxy) CGEventTapPostEvent(_activeProxy,_dockRelease);
+    else CGEventPost(kCGSessionEventTap,_dockRelease);
+    CFRelease(_dockRelease); _dockRelease=nullptr; self.dockSpace=0;
+}
+- (CGEventRef)handleMouse:(CGEventType)type event:(CGEventRef)event {
+    if(CGEventGetIntegerValueField(event,kCGEventSourceUserData)==gesture::sourceTag) return event;
+    if(type==kCGEventLeftMouseDown || type==kCGEventLeftMouseDragged) {
+        self.clickGeneration++; self.dockCandidate=nil;
+        if(_dockRelease) [self cancelAnimation];
+        if(type==kCGEventLeftMouseDragged || !self.dockClicks || self.animating || self.physicalGesture || self.dockLookupBusy) return event;
+        auto modifiers=CGEventGetFlags(event)&(kCGEventFlagMaskControl|kCGEventFlagMaskShift|kCGEventFlagMaskAlternate|kCGEventFlagMaskCommand);
+        if(modifiers || CGEventGetIntegerValueField(event,kCGMouseEventClickState)!=1) return event;
+        self.dockPoint=CGEventGetLocation(event); self.clickStarted=CACurrentMediaTime();
+        CGPoint point=self.dockPoint; NSUInteger click=self.clickGeneration;
+        self.dockLookupBusy=YES;
+        __weak SJSwitchEngine *weakSelf=self;
+        dispatch_async(_dockLookup,^{ @autoreleasepool {
+            SJDockTarget *target=SJDockTargetAtPoint(point);
+            dispatch_async(dispatch_get_main_queue(),^{
+                SJSwitchEngine *engine=weakSelf;
+                engine.dockLookupBusy=NO;
+                if(engine.running && engine.clickGeneration==click) engine.dockCandidate=target;
+            });
+        } });
+        return event;
+    }
+    SJDockTarget *candidate=self.dockCandidate; self.dockCandidate=nil; self.clickGeneration++;
+    auto modifiers=CGEventGetFlags(event)&(kCGEventFlagMaskControl|kCGEventFlagMaskShift|kCGEventFlagMaskAlternate|kCGEventFlagMaskCommand);
+    if(!self.dockClicks || !candidate || self.animating || self.physicalGesture || modifiers ||
+       CACurrentMediaTime()-self.clickStarted>0.5 ||
+       CGEventGetIntegerValueField(event,kCGMouseEventClickState)!=1 ||
+       !CGRectContainsPoint(candidate.bounds,CGEventGetLocation(event)) || !SJDockTargetStillValid(candidate)) return event;
+    try {
+        SpaceState state=loadStateAtPoint(self.dockPoint);
+        int direction=SJDockDirection(state.spaces,state.index,candidate.space);
+        if(!direction) return event;
+        _dockRelease=CGEventCreateCopy(event);
+        if(!_dockRelease) return event;
+        self.dockSpace=candidate.space;
+        if([self move:direction] && self.animating) return nullptr;
+        CFRelease(_dockRelease); _dockRelease=nullptr; self.dockSpace=0;
+    } catch(...) {
+        if(_dockRelease) { CFRelease(_dockRelease); _dockRelease=nullptr; self.dockSpace=0; }
+        // A click that cannot be handled remains native.
+    }
+    return event;
+}
+- (CGEventRef)handle:(CGEventType)type event:(CGEventRef)event proxy:(CGEventTapProxy)proxy {
+    _activeProxy=proxy;
+    CGEventRef result=[self process:type event:event];
+    _activeProxy=nullptr;
+    return result;
+}
+- (CGEventRef)process:(CGEventType)type event:(CGEventRef)event {
     if(type==kCGEventTapDisabledByTimeout || type==kCGEventTapDisabledByUserInput) {
         if(_tap && self.running && AXIsProcessTrusted()) CGEventTapEnable(_tap,true);
         return event;
     }
     if(!self.running) return event;
+    if(type==kCGEventLeftMouseDown || type==kCGEventLeftMouseUp || type==kCGEventLeftMouseDragged)
+        return [self handleMouse:type event:event];
     if(type==30) {
         if(CGEventGetIntegerValueField(event,kCGEventSourceUserData)==gesture::sourceTag) return event;
         if(CGEventGetIntegerValueField(event,gesture::field(110))!=23) return event;
@@ -160,7 +249,7 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
         return YES;
     }
     try {
-        SpaceState state=loadState();
+        SpaceState state=_dockRelease?loadStateAtPoint(self.dockPoint):loadState();
         NSInteger target=NSInteger(state.index)+direction;
         if(target<0 || target>=NSInteger(state.spaces.count)) return YES;
         for(NSUInteger i=0;i<state.spaces.count;i++) {
@@ -207,6 +296,16 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     int64_t actual=SLSManagedDisplayGetCurrentSpace(SLSMainConnectionID(),(__bridge CFStringRef)self.display);
     if(actual==self.target) {
         self.animating=NO;
+        if(_dockRelease) {
+            if(actual!=self.dockSpace) {
+                try {
+                    SpaceState state=loadStateAtPoint(self.dockPoint);
+                    int next=SJDockDirection(state.spaces,state.index,self.dockSpace);
+                    if(next && [self move:next] && self.animating) return;
+                } catch(...) {}
+            }
+            [self releaseDockClick];
+        }
         if(self.roundTripRemaining && --self.roundTripRemaining==0)
             [self note:[NSString stringWithFormat:@"Round trip passed · %ld ms per move",(long)self.milliseconds]];
         else [self note:@"Ready for your next switch."];
@@ -226,12 +325,14 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
 }
 - (void)cancelAnimation {
     self.generation++; _pending.clear(); self.roundTripRemaining=0;
+    self.clickGeneration++; self.dockCandidate=nil;
     [self.timer invalidate]; self.timer=nil;
     if(self.gestureOpen) {
         try { [self post:gesture::cancelled progress:-gesture::epsilon*self.direction velocity:gesture::epsilon*self.direction includeVelocity:YES]; }
         catch(...) {}
     }
     self.gestureOpen=NO; self.animating=NO;
+    [self releaseDockClick];
 }
 - (void)stop {
     self.running=NO; [self cancelAnimation]; self.physicalGesture=NO;
