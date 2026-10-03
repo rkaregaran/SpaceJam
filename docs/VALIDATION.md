@@ -121,3 +121,12 @@ uploaded with explicit user authorization into encrypted Actions secrets;
 the encrypted temporary export was deleted. Signing identity/team metadata
 are configured. Cloud workflow verification still requires direct secure entry
 of the Apple ID and app-specific notarization password.
+
+The final ZIP, DMG, and build contain the same 0.3.0 executable. The DMG’s
+Applications link and both recorded checksums were verified. The notarized
+app is installed at /Applications/SpaceJam.app; the previous app is backed up
+under .local/before-command-tab/SpaceJam.app. Installed settings retain 75 ms,
+Dock acceleration on, menu icon hidden, and login startup on. Command–Tab
+acceleration defaults on. Accessibility is recognized and the installed Verify
+switching control passed its 75 ms round trip. GitHub build/tests passed on
+3eabc0c68b8ce43b15d6a8f0db168a69521d3c77 (run 37148427770).
