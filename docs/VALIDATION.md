@@ -147,3 +147,15 @@ switching control passed its 75 ms round trip. GitHub build/tests passed on
   accepts Tahoe through Golden Gate; the published 0.3.0 cask remains unchanged.
 - Actual Tahoe switching, app activation, and onboarding are pending the user's
   second Mac. Follow TAHOE_TESTING.md before publishing Tahoe support as stable.
+
+The [cloud build](https://github.com/rkaregaran/SpaceJam/actions/runs/37382587652)
+and [signed prerelease pipeline](https://github.com/rkaregaran/SpaceJam/actions/runs/37382610255)
+both passed for source commit 01447b8de7b72c9746efd0a218170b433c5e5989.
+[Version 0.3.1](https://github.com/rkaregaran/SpaceJam/releases/tag/v0.3.1)
+is published as a prerelease; v0.3.0 remains latest and the stable cask is unchanged.
+Downloaded public DMG/ZIP checksums match SHA256SUMS and the manifest. Both
+apps have a 26.0 bundle and Mach-O minimum, matching arm64 executables, valid
+Developer ID signatures/stapled tickets, and Gatekeeper acceptance. The DMG
+also passes image integrity, stapled-ticket, and Gatekeeper checks and contains
+the expected Applications symlink. This establishes distribution checks; live
+Tahoe validation remains pending.
