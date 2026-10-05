@@ -180,3 +180,20 @@ with all 35 gesture-format cases, 13 desktop-route cases, Command–Tab routing,
 and settings tests. Installer/cask syntax, Python compilation, and Actions
 lint also passed. Native screenshots were refreshed for 0.3.2; settings and
 permission-helper layout were inspected. No input was posted by these checks.
+
+The [cloud build](https://github.com/rkaregaran/SpaceJam/actions/runs/37386624568)
+passed. The [signed release run](https://github.com/rkaregaran/SpaceJam/actions/runs/37386663761)
+built, tested, signed, notarized, and saved the final artifacts, then pushed the
+Homebrew cask commit and v0.3.2 tag. GitHub returned HTTP 500 while creating the
+release, leaving an empty draft. Publication was recovered by uploading the
+exact saved artifacts to that draft and marking it stable/latest; nothing was
+rebuilt or re-signed during recovery.
+
+[Version 0.3.2](https://github.com/rkaregaran/SpaceJam/releases/tag/v0.3.2)
+is now the latest stable release. Anonymous latest-download links for the DMG,
+ZIP, checksums, and manifest were fetched and verified. Both packaged apps have
+a 26.0 bundle/Mach-O minimum, identical arm64 executables, valid Developer ID
+signatures and stapled tickets, and Gatekeeper acceptance. The DMG passes image
+integrity and ticket checks and contains the Applications symlink. Its final
+SHA-256 matches the generated cask. Refreshing the existing Homebrew tap and
+`brew fetch --cask rkaregaran/spacejam/spacejam` successfully fetched 0.3.2.

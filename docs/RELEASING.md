@@ -117,6 +117,9 @@ If main advances during packaging, publishing stops and the verified artifacts
 remain downloadable from the run. If publishing fails after creating the tag,
 recover using those saved artifacts and the generated cask; do not overwrite an
 existing release with a fresh rebuild, whose signing timestamps change hashes.
+A GitHub API error can leave a draft even when release creation reports failure.
+Inspect the release first; if the draft exists, upload the exact saved assets
+to it and publish it after verification. Do not create a duplicate release.
 
 ## Local development package
 
