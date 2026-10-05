@@ -13,8 +13,8 @@ if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "arm64" ]]; then
   echo "SpaceJam requires a Mac with Apple silicon." >&2; exit 1
 fi
 spacejam_major="$(sw_vers -productVersion | cut -d. -f1)"
-if [[ "$spacejam_major" != "27" ]]; then
-  echo "This release supports macOS 27." >&2; exit 1
+if [[ "$spacejam_major" != "26" && "$spacejam_major" != "27" ]]; then
+  echo "This release supports macOS 26 and 27." >&2; exit 1
 fi
 if [[ -e "$spacejam_destination" ]]; then
   echo "SpaceJam is already installed. Quit it and replace it using the latest DMG, or use Homebrew to upgrade." >&2
@@ -37,6 +37,12 @@ spacejam_app="$spacejam_scratch/unpacked/SpaceJam.app"
 spacejam_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$spacejam_app/Contents/Info.plist")"
 if [[ "$spacejam_identifier" != "dev.rzkr.SpaceJam" ]]; then
   echo "Unexpected app identity. Nothing was installed." >&2; exit 1
+fi
+spacejam_minimum="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$spacejam_app/Contents/Info.plist")"
+if [[ "$spacejam_major" -lt "${spacejam_minimum%%.*}" ]]; then
+  echo "The latest stable download requires macOS $spacejam_minimum. Nothing was installed." >&2
+  echo "Find the Tahoe test release at https://github.com/${spacejam_repository}/releases" >&2
+  exit 1
 fi
 /usr/bin/codesign --verify --deep --strict "$spacejam_app"
 /usr/sbin/spctl --assess --type execute --verbose=2 "$spacejam_app"

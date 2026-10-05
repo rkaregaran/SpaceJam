@@ -130,3 +130,20 @@ Dock acceleration on, menu icon hidden, and login startup on. Command–Tab
 acceleration defaults on. Accessibility is recognized and the installed Verify
 switching control passed its 75 ms round trip. GitHub build/tests passed on
 3eabc0c68b8ce43b15d6a8f0db168a69521d3c77 (run 37148427770).
+
+
+## macOS 26/27 targeting — 0.3.1 test release (October 5, 2026)
+
+- On the macOS 27.2 host, the arm64 app compiles with warnings treated as errors,
+  has bundle minimum 26.0, and its Mach-O LC_BUILD_VERSION records minos 26.0.
+- All 35 non-input gesture serialization cases pass. Explicit macOS 26 and 27
+  cases check both directions, natural scrolling, every phase, source tagging,
+  and end velocity; malformed serialization is refused. This validates the
+  payload conventions on this host, not macOS 26's native handling.
+- All 13 desktop-route cases, Command–Tab routing, and settings tests pass.
+  Installer/cask syntax, Python compilation, and Actions lint pass.
+- The signed workflow can publish a prerelease without changing the stable
+  Homebrew cask or latest release. The template for the next stable release
+  accepts Tahoe through Golden Gate; the published 0.3.0 cask remains unchanged.
+- Actual Tahoe switching, app activation, and onboarding are pending the user's
+  second Mac. Follow TAHOE_TESTING.md before publishing Tahoe support as stable.

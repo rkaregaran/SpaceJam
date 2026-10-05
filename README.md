@@ -12,7 +12,13 @@ Command–Tab support is included from v0.3.0. Check the version on the
 
 ## Install
 
-**Apple silicon · macOS 27 · at least two ordinary desktops**
+**Apple silicon · macOS 26 or 27 · at least two ordinary desktops**
+
+macOS 26 Tahoe support is available in the
+[0.3.1 test release](https://github.com/rkaregaran/SpaceJam/releases/tag/v0.3.1)
+for hands-on validation. The latest stable release, Homebrew, and terminal
+installer still distribute 0.3.0 for macOS 27. On Tahoe, use the test-release
+DMG and follow the [Tahoe checklist](docs/TAHOE_TESTING.md).
 
 Downloads are Developer ID signed and notarized by Apple.
 
@@ -138,7 +144,7 @@ feature disable, and lifecycle changes return any deferred Command release.
   permission to copy the app into `/Applications`; runtime switching does not.
 - **Private APIs can break.** SkyLight functions, desktop metadata, gesture
   fields, and event serialization are undocumented implementation details.
-  Even a macOS 27 update can change them. Startup checks reject unsupported
+  Even a macOS update can change them. Startup checks reject unsupported
   serialization, and unhandled initial shortcuts pass through to macOS, but
   these checks cannot guarantee correct behavior after every OS update.
 - **Input can be dropped or interrupted.** Up to six additional moves are
@@ -159,7 +165,9 @@ feature disable, and lifecycle changes return any deferred Command release.
   Review](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
   and does not establish that this private gesture mechanism is supported or
   bug-free. Recorded live checks cover macOS **27.2 build 26B5091g**, including
-  desktop round trips at 75 and 100 ms with SIP enabled. Broader display,
+  desktop round trips at 75 and 100 ms with SIP enabled. Tahoe live checks
+  are pending; cross-version payload tests do not establish live compatibility.
+  Broader display,
   fullscreen, sleep/wake, and permission-revocation checks remain listed in
   [the validation record](docs/VALIDATION.md).
 

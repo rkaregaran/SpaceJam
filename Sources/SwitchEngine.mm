@@ -150,8 +150,9 @@ static CGEventRef tapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
 - (BOOL)start {
     if(self.running) return YES;
     if(!AXIsProcessTrusted()) { [self note:@"Enable Accessibility to get started."]; return NO; }
-    if(NSProcessInfo.processInfo.operatingSystemVersion.majorVersion!=27) {
-        [self note:@"This version supports macOS 27. Native shortcuts are active."]; return NO;
+    NSInteger major=NSProcessInfo.processInfo.operatingSystemVersion.majorVersion;
+    if(major!=26 && major!=27) {
+        [self note:@"This version supports macOS 26 and 27. Native shortcuts are active."]; return NO;
     }
     try {
         CGEventRef check=gesture::create(gesture::began,gesture::epsilon,0,false,naturalScrolling(),CGPointZero);

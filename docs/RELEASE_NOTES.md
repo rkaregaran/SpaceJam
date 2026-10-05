@@ -1,35 +1,29 @@
-# SpaceJam 0.3.0
+# SpaceJam 0.3.1 — macOS Tahoe test release
 
-Command–Tab can now use your chosen desktop-switching duration, alongside
-Control–Left/Right, mapped mouse buttons, and Dock app clicks.
+SpaceJam now targets Apple silicon Macs running macOS 26 Tahoe or macOS 27.
+This prerelease is ready for Tahoe testing; live compatibility on macOS 26
+has not yet been established.
 
-- Keep the native macOS app switcher, including Command–Shift–Tab and arrow
-  navigation. Escape still cancels.
-- Toggle **Speed up Command–Tab** independently in settings; it is on by default.
-- Supported switches reach the selected app's ordinary desktop before macOS
-  activates it. Fullscreen, ambiguous windows/app names, and unresolved quick
-  taps retain native behavior. Distant routes use adjacent moves, each at the
-  chosen duration.
-- New input or disabling the feature returns any held Command release, so
-  subsequent keys and modifiers keep their normal behavior.
-- Future releases can be built, signed, notarized, and packaged through the
-  manual Signed release workflow, including a verification-only mode. Publishing
-  regenerates the Homebrew cask from the final notarized DMG checksum.
+- Lower the app deployment target and bundle minimum to macOS 26.0.
+- Allow macOS 26 and 27 at runtime; other major versions retain native behavior.
+- Preserve the OS-specific natural-scrolling payload convention and test both
+  versions, both directions, all gesture phases, and end velocity without
+  posting input.
+- Keep Control–Left/Right, Dock clicks, and Command–Tab acceleration available.
+  Physical trackpad swipes and fullscreen transitions retain native behavior.
+- Add an automated prerelease option to the signed release workflow. Test
+  downloads are signed, notarized, and stapled through the same pipeline.
 
-At a 75 ms setting on macOS 27.2, live supported Command–Tab switches changed
-the desktop ID in roughly 111 ms, compared with 286 ms natively. These are
-elapsed desktop-state timings, not measurements of every rendered frame.
-The selected duration controls the gesture; macOS can add settling time.
+Download `SpaceJam-0.3.1-arm64.dmg`, open it, and drag SpaceJam to Applications.
+Quit an existing SpaceJam before replacing it. Grant Accessibility, create at
+least two ordinary desktops, and start with 100 ms. Follow the
+[Tahoe test checklist](https://github.com/rkaregaran/SpaceJam/blob/main/docs/TAHOE_TESTING.md)
+and report your exact macOS version plus which paths work or fail.
 
-Requires Apple silicon, macOS 27, and at least two ordinary desktops. Physical
-trackpad swipes, Mission Control, numbered shortcuts, and fullscreen transitions
-retain their native behavior. Private macOS interfaces power this workaround,
-and an OS update can break compatibility.
+Homebrew and the latest stable download remain on 0.3.0 for macOS 27 while
+Tahoe testing is underway. Use this prerelease DMG on Tahoe.
 
-For an existing installation, quit SpaceJam before replacing the app. Download
-`SpaceJam-0.3.0-arm64.dmg`, open it, and drag SpaceJam to Applications. Homebrew
-users can run `brew update` then `brew upgrade --cask rkaregaran/spacejam/spacejam`
-after publication. For other installation methods, see the repository README.
-
-The app interface and packaging are MIT licensed. The gesture engine adapts
-Matthew Bowen's FasterSwiper under Apache-2.0, with its notices preserved.
+Private macOS interfaces power this workaround. Signing and notarization verify
+distribution, not live desktop-switching compatibility. The app interface and
+packaging are MIT licensed; the gesture engine adapts Matthew Bowen's
+FasterSwiper under Apache-2.0, with its notices preserved.

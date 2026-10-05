@@ -7,6 +7,10 @@ on:
         description: Build and notarize artifacts without publishing a release
         type: boolean
         default: false
+      prerelease:
+        description: Publish a test release without changing latest or Homebrew
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -103,23 +107,30 @@ jobs:
         if: ${{ !inputs.verify_only }}
         env:
           GH_TOKEN: ${{ github.token }}
+          SPACEJAM_PRERELEASE: ${{ inputs.prerelease }}
         run: |
           set -euo pipefail
           git fetch origin main
           [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || { echo "main changed during packaging; saved artifacts are available for review." >&2; exit 1; }
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add Casks/spacejam.rb
-          if ! git diff --cached --quiet; then
-            git commit -m "Update Homebrew cask for SpaceJam $SPACEJAM_RELEASE_VERSION"
-            git push origin HEAD:main
+          if [[ "$SPACEJAM_PRERELEASE" != true ]]; then
+            git add Casks/spacejam.rb
+            if ! git diff --cached --quiet; then
+              git commit -m "Update Homebrew cask for SpaceJam $SPACEJAM_RELEASE_VERSION"
+              git push origin HEAD:main
+            fi
           fi
           spacejam_tag="v$SPACEJAM_RELEASE_VERSION"
           git tag -a "$spacejam_tag" -m "SpaceJam $SPACEJAM_RELEASE_VERSION"
           git push origin "$spacejam_tag"
           gh release create "$spacejam_tag" --verify-tag --draft --title "SpaceJam $SPACEJAM_RELEASE_VERSION" --notes-file docs/RELEASE_NOTES.md \
             "dist/SpaceJam-${SPACEJAM_RELEASE_VERSION}-arm64.dmg" dist/SpaceJam-arm64.zip dist/SHA256SUMS dist/release-manifest.json
-          gh release edit "$spacejam_tag" --draft=false --latest
+          if [[ "$SPACEJAM_PRERELEASE" == true ]]; then
+            gh release edit "$spacejam_tag" --draft=false --prerelease --latest=false
+          else
+            gh release edit "$spacejam_tag" --draft=false --latest
+          fi
 
       - name: Remove temporary signing material
         if: always()

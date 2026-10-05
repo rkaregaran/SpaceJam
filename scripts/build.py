@@ -35,16 +35,16 @@ def main():
                 CFBundleDisplayName="SpaceJam", CFBundleExecutable="SpaceJam",
                 CFBundlePackageType="APPL", CFBundleVersion=version,
                 CFBundleShortVersionString=version, CFBundleIconFile="SpaceJam.icns",
-                LSMinimumSystemVersion="27.0", LSUIElement=True,
+                LSMinimumSystemVersion="26.0", LSUIElement=True,
                 NSHighResolutionCapable=True, NSPrincipalClass="NSApplication",
                 NSHumanReadableCopyright="Copyright © 2026 Reza Karegaran")
     (contents / "Info.plist").write_bytes(plistlib.dumps(info))
-    flags = ["-std=c++20", "-fobjc-arc", "-arch", "arm64", "-mmacosx-version-min=27.0",
+    flags = ["-std=c++20", "-fobjc-arc", "-arch", "arm64", "-mmacosx-version-min=26.0",
              "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-unused-parameter", "-Wno-deprecated-declarations"]
     compiler = ["/usr/bin/xcrun", "clang++", *flags]
     # Build tools/tests can run on older CI hosts with SDK 27. The shipped app
-    # keeps its macOS 27 deployment target and runtime compatibility guard.
-    utility_compiler = [value.replace("-mmacosx-version-min=27.0", "-mmacosx-version-min=13.0") for value in compiler]
+    # supports macOS 26 and 27 with a matching runtime compatibility guard.
+    utility_compiler = [value.replace("-mmacosx-version-min=26.0", "-mmacosx-version-min=13.0") for value in compiler]
     run(*utility_compiler, "-framework", "AppKit", ROOT / "Sources/IconBuilder.mm", "-o", BUILD / "icon-builder")
     iconset = BUILD / "SpaceJam.iconset"
     run(BUILD / "icon-builder", iconset)

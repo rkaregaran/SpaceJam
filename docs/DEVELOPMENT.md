@@ -3,7 +3,8 @@
 ## Requirements
 
 Apple silicon, Apple's SDK 27 and command line tools, and Python 3.11 or newer.
-Running the shipped app requires macOS 27. Development builds use an ad hoc
+The app targets macOS 26 and 27; Tahoe live validation is pending.
+Development builds use an ad hoc
 signature and are unsuitable for public downloads.
 
 ```sh
@@ -89,10 +90,10 @@ Feature disable, stop, sleep, and display changes also return the release.
 
 ## Validation
 
-Tests cover 19 gesture cases across both directions, natural scrolling,
-all four phases, and malformed serialized data. They verify both the embedded
-payload and restored synthetic source tag. Preferences tests use an isolated
-temporary domain and check defaults, persistence, and corrupted-duration
+Tests cover 35 gesture cases across explicit macOS 26/27 payload conventions,
+both directions, natural scrolling, all four phases, and malformed serialized data. They verify both the embedded
+payload, velocity, and restored synthetic source tag. Preferences tests use an
+isolated temporary domain and check defaults, persistence, and corrupted-duration
 bounds. Run these through the build command.
 Thirteen Dock route cases cover adjacency, distant targets, same/other display,
 fullscreen routes, and malformed desktop metadata. Live Dock checks are
@@ -102,7 +103,8 @@ modifiers, feature disable, synthetic events, and untouched unresolved releases.
 
 GitHub CI uses the `xcode-27` public-preview runner to build the app and execute
 the non-input tests. Test and icon-generator executables have a macOS 13
-minimum so they can run on a CI host with SDK 27; the app remains macOS 27-only.
+minimum so they can run on a CI host with SDK 27; the app has a macOS 26
+minimum and accepts only macOS 26 and 27 at runtime.
 CI does not establish live desktop-switching compatibility or permission
 onboarding. Those require a logged-in Mac with multiple desktops.
 

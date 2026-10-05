@@ -4,6 +4,7 @@
 // See licenses/ for upstream notices. Modified: standalone horizontal-only
 // test implementation with Foundation/CoreGraphics and standard C++.
 #pragma once
+#import <Foundation/Foundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 #include <mach/mach_time.h>
 #include <algorithm>
@@ -98,9 +99,11 @@ inline Bytes hidPayload(CGEventRef event,int phase,double progress,double veloci
     return out;
 }
 inline CGEventRef create(int phase,double progress,double velocity,bool hasVelocity,
-                         bool natural,CGPoint location) {
+                         bool natural,CGPoint location,
+                         NSInteger systemMajor=NSProcessInfo.processInfo.operatingSystemVersion.majorVersion) {
     // macOS 27 reverses the payload sign when natural scrolling is enabled.
-    if(@available(macOS 27.0,*)) { if(natural) { progress=-progress; velocity=-velocity; } }
+    // Explicit version injection lets non-input tests check both OS formats.
+    if(systemMajor>=27 && natural) { progress=-progress; velocity=-velocity; }
     CGEventSourceRef source=CGEventSourceCreate(kCGEventSourceStatePrivate);
     if(!source) throw std::runtime_error("Cannot create CoreGraphics event source");
     CGEventSourceSetUserData(source,sourceTag);

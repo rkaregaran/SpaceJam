@@ -9,7 +9,7 @@ cask "spacejam" do
   homepage "https://github.com/rkaregaran/SpaceJam"
 
   depends_on arch: :arm64
-  depends_on macos: :golden_gate
+  depends_on macos: :tahoe
   depends_on maximum_macos: :golden_gate
 
   app "SpaceJam.app"
@@ -23,7 +23,7 @@ cask "spacejam" do
 
   caveats do
     <<~EOS
-      Requires macOS 27. Open SpaceJam from Applications and enable
+      Requires macOS 26 or 27. Open SpaceJam from Applications and enable
       its Accessibility permission. Physical trackpad swipes and fullscreen
       desktops keep their native behavior.
     EOS

@@ -53,7 +53,7 @@ using the actual final DMG hash. It refuses to publish an ad hoc build.
   and `dist/release-manifest.json`. Use `docs/RELEASE_NOTES.md` for the release body.
 
 Do not publish files containing `-dev-` in their names. The latest-download
-links and terminal installer follow the most recently published release.
+links and terminal installer follow the most recently published stable release.
 
 ## Homebrew
 
@@ -97,10 +97,18 @@ Select **verify_only** to exercise the entire signing, notarization, and packagi
 pipeline without changing the cask, tags, or public release. This mode allows an
 already released VERSION and saves the verified artifacts on the Actions run.
 
+Select **prerelease** to publish downloadable test artifacts without changing
+the latest stable release or committing the generated Homebrew cask. The tag
+points to the source commit and the generated cask is saved in the run artifact.
+`verify_only` takes precedence and prevents publication even if both are selected.
+For Tahoe, use this mode until the checks in TAHOE_TESTING.md pass. After testing,
+bump VERSION for the next stable release and publish with prerelease disabled;
+existing version tags are never reused.
+
 The workflow imports credentials into a temporary runner keychain, builds and
 tests, notarizes/staples the app and DMG, verifies Gatekeeper, and saves the
-artifacts for 30 days. It then commits the exact DMG checksum to the Homebrew
-cask, tags that commit, uploads a draft release, and publishes it as latest.
+artifacts for 30 days. For a stable release, it then commits the exact DMG
+checksum to the Homebrew cask, tags that commit, uploads a draft release, and publishes it as latest.
 The runner's temporary keychain and certificate are removed even on failure.
 The repository must allow the workflow token to push the generated cask commit.
 
