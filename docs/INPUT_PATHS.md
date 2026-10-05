@@ -105,3 +105,12 @@ activation reached Muse in about 330 ms, engine remained running). A subsequent
 ordinary desktop move returned successfully. Non-input routing tests additionally
 cover arrows, both Command keys, extra modifiers, mouse cancellation, stopped
 and disabled engines, own tagged events, and unchanged unresolved releases.
+
+
+## Tahoe — stable support in v0.3.2
+
+The user tested v0.3.1 on a macOS 26 computer and reported successful Verify
+switching, Control–Left/Right, Dock clicks, and Command–Tab, then authorized
+stable publication. Version 0.3.2 uses the same switching implementation.
+The exact OS point release/build and measured timings were not supplied.
+The macOS 27 timings above must not be interpreted as Tahoe measurements.

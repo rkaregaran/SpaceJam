@@ -14,11 +14,8 @@ Command–Tab support is included from v0.3.0. Check the version on the
 
 **Apple silicon · macOS 26 or 27 · at least two ordinary desktops**
 
-macOS 26 Tahoe support is available in the
-[0.3.1 test release](https://github.com/rkaregaran/SpaceJam/releases/tag/v0.3.1)
-for hands-on validation. The latest stable release, Homebrew, and terminal
-installer still distribute 0.3.0 for macOS 27. On Tahoe, use the test-release
-DMG and follow the [Tahoe checklist](docs/TAHOE_TESTING.md).
+macOS 26 Tahoe support is included from v0.3.2 through the DMG, Homebrew,
+and terminal installer.
 
 Downloads are Developer ID signed and notarized by Apple.
 
@@ -165,9 +162,9 @@ feature disable, and lifecycle changes return any deferred Command release.
   Review](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
   and does not establish that this private gesture mechanism is supported or
   bug-free. Recorded live checks cover macOS **27.2 build 26B5091g**, including
-  desktop round trips at 75 and 100 ms with SIP enabled. Tahoe live checks
-  are pending; cross-version payload tests do not establish live compatibility.
-  Broader display,
+  desktop round trips at 75 and 100 ms with SIP enabled. The user also reports
+  successful Tahoe testing of Verify switching, Control–Left/Right, Dock clicks,
+  and Command–Tab using the 0.3.1 test release. Broader display,
   fullscreen, sleep/wake, and permission-revocation checks remain listed in
   [the validation record](docs/VALIDATION.md).
 

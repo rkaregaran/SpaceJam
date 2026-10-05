@@ -41,7 +41,7 @@ fi
 spacejam_minimum="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$spacejam_app/Contents/Info.plist")"
 if [[ "$spacejam_major" -lt "${spacejam_minimum%%.*}" ]]; then
   echo "The latest stable download requires macOS $spacejam_minimum. Nothing was installed." >&2
-  echo "Find the Tahoe test release at https://github.com/${spacejam_repository}/releases" >&2
+  echo "Find a compatible release at https://github.com/${spacejam_repository}/releases" >&2
   exit 1
 fi
 /usr/bin/codesign --verify --deep --strict "$spacejam_app"

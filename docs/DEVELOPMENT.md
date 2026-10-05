@@ -3,7 +3,8 @@
 ## Requirements
 
 Apple silicon, Apple's SDK 27 and command line tools, and Python 3.11 or newer.
-The app targets macOS 26 and 27; Tahoe live validation is pending.
+The app targets macOS 26 and 27. The user reports successful Tahoe input-path
+testing; see VALIDATION.md for the scope of recorded checks.
 Development builds use an ad hoc
 signature and are unsuitable for public downloads.
 

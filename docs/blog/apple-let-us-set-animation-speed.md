@@ -24,7 +24,7 @@ control the generated gesture; macOS can add time for the animation to settle.
 
 The app needs Accessibility permission and must stay running. It works on my
 Mac with System Integrity Protection enabled and doesn't modify system files.
-This version targets Apple silicon on macOS 27. It leaves trackpad swipes,
+This version targets Apple silicon on macOS 26 and 27. It leaves trackpad swipes,
 Mission Control, and transitions to full-screen apps unchanged.
 
 SpaceJam relies on private macOS interfaces, so an update could break it.

@@ -1,7 +1,7 @@
 # Test SpaceJam on macOS 26 Tahoe
 
 Use an Apple silicon Mac with macOS 26 and at least two ordinary desktops.
-Download the [0.3.1 test DMG](https://github.com/rkaregaran/SpaceJam/releases/tag/v0.3.1).
+Download the [latest stable DMG](https://github.com/rkaregaran/SpaceJam/releases/latest).
 Quit an existing SpaceJam, drag the new app to Applications, open it, and
 follow the Accessibility prompt. Leave SIP and Gatekeeper enabled.
 

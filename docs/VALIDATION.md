@@ -159,3 +159,24 @@ Developer ID signatures/stapled tickets, and Gatekeeper acceptance. The DMG
 also passes image integrity, stapled-ticket, and Gatekeeper checks and contains
 the expected Applications symlink. This establishes distribution checks; live
 Tahoe validation remains pending.
+
+
+## Stable macOS 26/27 support — 0.3.2 preparation (October 5, 2026)
+
+The user tested the published 0.3.1 release on their macOS 26 computer and
+reported that all requested checks worked: Verify switching, Control–Left/Right,
+Dock app clicks, and Command–Tab. They authorized stable publication and
+Homebrew distribution. The exact Tahoe point release/build, durations, and
+individual optional checks were not separately reported; this is user-reported
+validation, not measured results from this workstation.
+
+Version 0.3.2 retains the tested switching implementation. Release metadata,
+installation guidance, and compatibility notes now describe stable Tahoe
+support. The production pipeline will rebuild, test, sign, notarize, publish
+as latest, and generate the Homebrew cask from the final DMG checksum.
+
+Local 0.3.2 warning-as-error build and signature verification passed, along
+with all 35 gesture-format cases, 13 desktop-route cases, Command–Tab routing,
+and settings tests. Installer/cask syntax, Python compilation, and Actions
+lint also passed. Native screenshots were refreshed for 0.3.2; settings and
+permission-helper layout were inspected. No input was posted by these checks.

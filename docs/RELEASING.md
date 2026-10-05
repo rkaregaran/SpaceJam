@@ -101,7 +101,8 @@ Select **prerelease** to publish downloadable test artifacts without changing
 the latest stable release or committing the generated Homebrew cask. The tag
 points to the source commit and the generated cask is saved in the run artifact.
 `verify_only` takes precedence and prevents publication even if both are selected.
-For Tahoe, use this mode until the checks in TAHOE_TESTING.md pass. After testing,
+Use this mode when adding support for a new OS version until live checks pass.
+For Tahoe, the checklist is TAHOE_TESTING.md. After testing,
 bump VERSION for the next stable release and publish with prerelease disabled;
 existing version tags are never reused.
 
